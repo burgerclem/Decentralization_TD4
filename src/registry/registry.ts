@@ -1,5 +1,5 @@
 import bodyParser from "body-parser";
-import express, { Request, Response } from "express";
+import express from "express";
 import { REGISTRY_PORT } from "../config";
 
 export type Node = { nodeId: number; pubKey: string };
@@ -18,11 +18,30 @@ export async function launchRegistry() {
   _registry.use(express.json());
   _registry.use(bodyParser.json());
 
-  // TODO implement the status route
-  // _registry.get("/status", (req, res) => {});
+  let registeredNodes: GetNodeRegistryBody = { nodes: [] };
+
+  _registry.get("/status", (req, res) => {
+    res.send("live");
+  });
+
+  _registry.post("/registerNode", (req, res) => {
+    const { nodeId, pubKey }: RegisterNodeBody = req.body;
+
+    if (nodeId !== undefined && nodeId !== null && pubKey) {
+      const newNode: Node = { nodeId, pubKey };
+      registeredNodes.nodes.push(newNode);
+      res.status(201).json({ message: "Node registered." });
+    } else {
+      res.status(400).json({ error: "Invalid body." });
+    }
+  });
+
+  _registry.get("/getNodeRegistry", (req, res) => {
+    res.json(registeredNodes);
+  });
 
   const server = _registry.listen(REGISTRY_PORT, () => {
-    console.log(`registry is listening on port ${REGISTRY_PORT}`);
+    console.log(`Registry is listening on port ${REGISTRY_PORT}`);
   });
 
   return server;
